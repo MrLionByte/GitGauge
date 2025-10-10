@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitGauge - GitHub Profile Analysis API</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 GitGauge</h1>
+            <p>Automated GitHub Profile Analysis for Technical Recruiting</p>
+        </div>
+        
+        <div class="card">
+            <h2>📋 API Overview</h2>
+            <p>GitGauge simplifies candidate screening into a two-step, non-blocking process. Submit a GitHub username and required skills, get a job ID immediately, then check back later for a comprehensive analysis report.</p>
+            
+            <div class="links">
+                <a href="/docs">📚 Interactive API Docs</a>
+                <a href="/redoc">📖 ReDoc Documentation</a>
+                <a href="/openapi.json">🔧 OpenAPI Schema</a>
+            </div>
+        </div>
+        
+        <div class="features">
+            <div class="feature">
+                <div class="feature-icon">⚡</div>
+                <h3>Non-blocking</h3>
+                <p>Submit and continue working while analysis happens in background</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">🤖</div>
+                <h3>AI-Powered</h3>
+                <p>Uses Gemini LLM for intelligent code analysis and insights</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">📊</div>
+                <h3>Structured Reports</h3>
+                <p>Get consistent, actionable analysis with interview questions</p>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>🔗 API Endpoints</h2>
+            <div class="endpoint">
+                <span class="method post">POST</span>
+                <strong>/api/v1/jobs/</strong>
+                <p>Create a new analysis job</p>
+                <div class="example">
+                    <strong>Request:</strong>
+                    <div class="code">
+{
+  "github_username": "octocat",
+  "skills": ["python", "react", "docker"],
+  "repo_limit": 10,
+  "max_files_per_repo": 20
+}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="endpoint">
+                <span class="method get">GET</span>
+                <strong>/api/v1/jobs/{job_id}</strong>
+                <p>Get job status and results</p>
+                <div class="example">
+                    <strong>Response:</strong>
+                    <div class="code">
+{
+  "job_id": "123e4567-e89b-12d3-a456-426614174000",
+  "status": "completed",
+  "report": { ... },
+  "generated_at": "2024-01-15T10:30:00Z"
+}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>GitGauge v1.0.0 - Built with FastAPI and Madness</p>
+            <p>Ready to help you with technical recruiting!</p>
+        </div>
+    </div>
+</body>
+</html>
