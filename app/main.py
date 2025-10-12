@@ -9,12 +9,12 @@ from contextlib import asynccontextmanager
 from app.db.base import create_tables
 from app.workers.tasks import start_background_processor
 from app.utils.logging import setup_logging, log_api_request
-import asyncio
-import time
-import uuid
+import asyncio, time, uuid
 
 # Setup logging
-logger = setup_logging(level="INFO" if not settings.DEBUG else "DEBUG")
+logger = setup_logging(
+    level="INFO" if not settings.DEBUG else "DEBUG",
+)
 
 # Create database tables on startup
 @asynccontextmanager
@@ -41,6 +41,7 @@ async def lifespan(app: FastAPI):
     
     logger.info("🛑 Shutting down GitGauge application...")
 
+
 app = FastAPI(
     title=settings.APP_NAME,
     description="Tech candidate screening API that analyzes GitHub profiles",
@@ -54,7 +55,7 @@ app = FastAPI(
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"] if settings.DEBUG else ["https://yourdomain.com"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
