@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from sqlalchemy.orm import Session
 from typing import List
 from app.db.base import get_db
@@ -8,14 +8,16 @@ from app.api.schemas.jobs import (
     JobStatus as SchemaJobStatus, ErrorResponse
 )
 from app.db.models import JobStatus as ModelJobStatus
+from app.services.analysis_service import analysis_service
 import uuid
 
-router = APIRouter(prefix="/jobs", tags=["jobs"])
+router = APIRouter(prefix='/jobs')
 
 
 @router.post("/", response_model=JobResponse, status_code=status.HTTP_201_CREATED)
 async def create_job(
     job_request: CreateJobRequest,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db)
 ):
     """Create a new analysis job"""
@@ -23,8 +25,17 @@ async def create_job(
         # Create job repository
         job_repo = JobRepository(db)
         
-        # Create the job
+        # Create the job in database
         job = job_repo.create_job(job_request)
+        
+        # Start background analysis using Redis queue
+        from app.workers.tasks import process_analysis_job
+        background_tasks.add_task(
+            process_analysis_job,
+            str(job.id),
+            job_request.github_username,
+            job_request.skills
+        )
         
         # Return response
         return JobResponse(

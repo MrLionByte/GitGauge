@@ -1,119 +1,58 @@
-# 🔍 GitGauge
+# GitGauge 🎯
 
-**Tech Candidate Screening API** - Automated GitHub profile analysis for intelligent hiring decisions.
+**AI-Powered GitHub Candidate Screening Platform**
 
-GitGauge simplifies tech candidate screening into a non-blocking, two-step flow:
-- Recruiter submits `github_username` and required `skills` → API returns `job_id` immediately
-- Recruiter later polls `job_id` to retrieve a structured, actionable analysis report
+GitGauge is a comprehensive technical recruitment tool that analyzes GitHub profiles to provide detailed candidate assessments using AI. It combines GitHub API data with advanced AI analysis to generate professional hiring recommendations.
 
 ## 🚀 Features
 
-- **🎯 Skills Analysis**: Comprehensive evaluation of technical skills with evidence-based scoring
-- **📊 Code Quality Assessment**: Analysis of coding style, readability, testing, and documentation
-- **📈 Commit Pattern Analysis**: Evaluation of commit frequency, message quality, and collaboration
-- **❓ Interview Questions**: AI-generated, tailored interview questions based on code
-- **⚠️ Risk Assessment**: Identification of potential red flags and areas of concern
-- **🎯 Overall Recommendation**: Clear hiring recommendation with detailed justification
+### Core Capabilities
+- **GitHub Integration**: Fetches and analyzes user repositories
+- **AI-Powered Analysis**: Uses Groq/Gemini for intelligent candidate assessment
+- **Skills Matching**: Evaluates technical skills with evidence-based scoring
+- **Code Quality Assessment**: Analyzes code style, documentation, and practices
+- **Interview Questions**: Generates relevant technical interview questions
+- **Risk Assessment**: Identifies potential red flags and concerns
+- **Hiring Recommendations**: Provides data-driven hiring decisions
+
+### Technical Features
+- **RESTful API**: FastAPI-based with comprehensive documentation
+- **Background Processing**: Asynchronous job processing with Redis
+- **Database Persistence**: PostgreSQL with SQLAlchemy ORM
+- **Comprehensive Logging**: Detailed logging and error handling
+- **Rate Limiting**: GitHub API rate limit management
+- **CORS Support**: Cross-origin resource sharing enabled
 
 ## 🏗️ Architecture
 
-- **FastAPI monolith** with clean internal boundaries
-- **Async background processing** using FastAPI BackgroundTasks
-- **PostgreSQL with JSONB** for flexible LLM output storage
-- **GitHub API integration** with web scraping fallback
-- **AI/LLM integration** for generating structured analysis reports
-
-## 📋 API Endpoints
-
-### POST `/api/jobs`
-Create a new analysis job.
-
-**Request:**
-```json
-{
-  "github_username": "octocat",
-  "skills": ["Python", "JavaScript", "React"],
-  "repo_limit": 10,
-  "max_files_per_repo": 5,
-  "languages": ["Python", "JavaScript"],
-  "notes_for_ai": "Focus on backend development skills"
-}
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   FastAPI App   │    │  GitHub Client  │    │   AI Client     │
+│                 │    │                 │    │                 │
+│ • Job Creation  │───▶│ • Repo Fetching │───▶│ • Groq/Gemini   │
+│ • Status Check  │    │ • Skills Filter │    │ • Analysis      │
+│ • Results API   │    │ • Rate Limiting │    │ • Report Gen    │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+         │                       │                       │
+         ▼                       ▼                       ▼
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   PostgreSQL    │    │     Redis       │    │  Background     │
+│                 │    │                 │    │  Workers        │
+│ • Job Storage   │    │ • Job Queue     │    │                 │
+│ • Artifacts     │    │ • Status Cache  │    │ • Job Processing│
+│ • Reports       │    │ • Rate Limiting │    │ • Error Handling│
+└─────────────────┘    └─────────────────┘    └─────────────────┘
 ```
 
-**Response:**
-```json
-{
-  "job_id": "123e4567-e89b-12d3-a456-426614174000",
-  "status": "queued",
-  "estimated_wait_seconds": 300
-}
-```
+## 📋 Prerequisites
 
-### GET `/api/jobs/{job_id}`
-Get job status and results.
-
-**Response (Completed):**
-```json
-{
-  "job_id": "123e4567-e89b-12d3-a456-426614174000",
-  "status": "completed",
-  "created_at": "2024-01-15T10:30:00Z",
-  "updated_at": "2024-01-15T10:35:00Z",
-  "report": {
-    "candidate": {
-      "github_username": "octocat",
-      "summary_of_work": "Full-stack developer with 5+ years experience...",
-      "notable_repos": ["awesome-project", "cool-library"]
-    },
-    "skills_match": [
-      {
-        "skill": "Python",
-        "strength": 4,
-        "evidence_snippets": ["def calculate_score():", "import pandas as pd"],
-        "repos_referenced": ["data-analysis", "ml-project"]
-      }
-    ],
-    "code_quality": {
-      "style": "Good",
-      "readability": "Excellent",
-      "testing": "Good",
-      "documentation": "Excellent",
-      "security": "Good"
-    },
-    "commit_habits": {
-      "frequency": "Regular",
-      "message_quality": "Good",
-      "collaboration_signals": "Active in team projects"
-    },
-    "interview_questions": [
-      {
-        "question": "How do you handle error handling in Python?",
-        "rationale": "Based on your Python code patterns",
-        "difficulty": "intermediate"
-      }
-    ],
-    "risk_flags": [],
-    "overall_assessment": {
-      "decision_hint": "yes",
-      "justification": "Strong technical skills with good code quality"
-    }
-  },
-  "generated_at": "2024-01-15T10:35:00Z"
-}
-```
-
-### GET `/api/jobs`
-List recent jobs.
-
-## 🛠️ Setup & Installation
-
-### Prerequisites
 - Python 3.8+
-- PostgreSQL (or SQLite for development)
-- GitHub API token
-- AI API key (OpenAI, Groq, etc.)
+- PostgreSQL 12+
+- Redis 6+
+- GitHub API Token (optional, for higher rate limits)
+- Groq API Key (for AI analysis)
 
-### Installation
+## 🛠️ Installation
 
 1. **Clone the repository**
    ```bash
@@ -123,8 +62,8 @@ List recent jobs.
 
 2. **Create virtual environment**
    ```bash
-   python -m venv .gitgauge-venv
-   source .gitgauge-venv/bin/activate  # On Windows: .gitgauge-venv\Scripts\activate
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
    ```
 
 3. **Install dependencies**
@@ -132,115 +71,268 @@ List recent jobs.
    pip install -r requirements.txt
    ```
 
-4. **Environment configuration**
+4. **Configure environment**
    ```bash
    cp env.example .env
    # Edit .env with your configuration
    ```
 
-5. **Run the application**
+5. **Set up database**
    ```bash
-   uvicorn app.main:app --reload
+   # Ensure PostgreSQL is running
+   # The app will create tables automatically on startup
    ```
+
+6. **Start Redis**
+   ```bash
+   redis-server
+   ```
+
+7. **Run the application**
+   ```bash
+   python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+   ```
+
+## 🔧 Configuration
 
 ### Environment Variables
 
-```env
-# Database Configuration
-DATABASE_URL=sqlite:///./gitgauge.db
+```bash
+# Database
+DATABASE_URL=postgresql://user:password@localhost/gitgauge
 
-# GitHub Configuration
-GITHUB_TOKEN=your_github_token_here
+# GitHub API
+GITHUB_TOKEN=your_github_token_here  # Optional but recommended
 
 # AI Configuration
-AI_API_KEY=your_ai_api_key_here
-AI_MODEL=gpt-3.5-turbo
+AI_API_KEY=your_groq_api_key_here
 
-# Application Configuration
+# Redis
+REDIS_URL=redis://localhost:6379/0
+
+# Application
+APP_NAME=GitGauge
 DEBUG=True
 HOST=0.0.0.0
 PORT=8000
 ```
 
-## 🧪 Testing
+### API Keys Setup
+
+1. **GitHub Token** (Optional)
+   - Go to [GitHub Settings > Developer settings > Personal access tokens](https://github.com/settings/tokens)
+   - Generate a token with `public_repo` scope
+   - Add to `.env` file
+
+2. **Groq API Key** (Required for AI features)
+   - Sign up at [Groq Console](https://console.groq.com/)
+   - Generate an API key
+   - Add to `.env` file
+
+## 📚 API Usage
+
+### Create Analysis Job
 
 ```bash
-# Test health endpoint
-curl http://localhost:8000/health
-
-# Create a job
-curl -X POST "http://localhost:8000/api/jobs" \
+curl -X POST "http://localhost:8000/api/jobs/" \
   -H "Content-Type: application/json" \
   -d '{
-    "github_username": "octocat",
-    "skills": ["Python", "Django", "PostgreSQL"]
+    "github_username": "torvalds",
+    "skills": ["C", "Linux", "kernel"],
+    "repo_limit": 10,
+    "max_files_per_repo": 5,
+    "languages": ["C", "Python"],
+    "notes_for_ai": "Looking for kernel development expertise"
   }'
+```
 
-# Check job status
+**Response:**
+```json
+{
+  "job_id": "uuid-here",
+  "status": "queued",
+  "estimated_wait_seconds": 300
+}
+```
+
+### Check Job Status
+
+```bash
 curl "http://localhost:8000/api/jobs/{job_id}"
 ```
 
-## 📊 Job Status
+**Response:**
+```json
+{
+  "job_id": "uuid-here",
+  "status": "completed",
+  "created_at": "2025-10-12T18:02:09.666813+05:30",
+  "updated_at": "2025-10-12T18:02:26.006046+05:30",
+  "report": {
+    "candidate": {
+      "github_username": "torvalds",
+      "summary_of_work": "Active developer with 5 relevant repositories...",
+      "notable_repos": ["torvalds/linux", "torvalds/subsurface-for-dirk"]
+    },
+    "skills_match": [
+      {
+        "skill": "C",
+        "strength": 5,
+        "evidence_snippets": ["Found C code in linux", "..."],
+        "repos_referenced": ["torvalds/linux", "..."]
+      }
+    ],
+    "code_quality": {
+      "style": "Excellent",
+      "readability": "Excellent",
+      "testing": "Good",
+      "documentation": "Good",
+      "security": "Good"
+    },
+    "commit_habits": {
+      "frequency": "Frequent",
+      "message_quality": "Excellent",
+      "collaboration_signals": "Very Active"
+    },
+    "interview_questions": [
+      {
+        "question": "Can you explain the Linux kernel's memory management subsystem?",
+        "rationale": "Assesses understanding of kernel-level memory management",
+        "difficulty": "advanced"
+      }
+    ],
+    "risk_flags": [
+      {
+        "flag": "Lack of diversity in project types",
+        "description": "Most projects are related to Linux kernel development...",
+        "severity": "medium"
+      }
+    ],
+    "overall_assessment": {
+      "decision_hint": "strong_yes",
+      "justification": "Linus Torvalds' GitHub profile showcases exceptional expertise..."
+    }
+  },
+  "generated_at": "2025-10-12T18:02:26.055519+05:30"
+}
+```
 
-- **`queued`**: Job is waiting to be processed
-- **`running`**: Analysis is currently in progress
-- **`completed`**: Analysis completed successfully
-- **`failed`**: Analysis failed with error details
+### List Recent Jobs
 
-## 🏗️ Development
+```bash
+curl "http://localhost:8000/api/jobs/?limit=10"
+```
+
+## 🎯 Analysis Components
+
+### Skills Assessment
+- **Strength Rating**: 1-5 scale based on evidence
+- **Evidence Snippets**: Specific examples from repositories
+- **Repository References**: Links to relevant projects
+
+### Code Quality Analysis
+- **Style**: Code organization and consistency
+- **Readability**: Code clarity and documentation
+- **Testing**: Test coverage and quality indicators
+- **Documentation**: README and code documentation
+- **Security**: Security best practices
+
+### Interview Questions
+- **Technical Depth**: Questions based on actual projects
+- **Difficulty Levels**: Beginner, intermediate, advanced
+- **Rationale**: Why each question is relevant
+
+### Risk Assessment
+- **Red Flags**: Potential concerns identified
+- **Severity Levels**: Low, medium, high
+- **Descriptions**: Detailed explanations
+
+## 🔍 Development
 
 ### Project Structure
+
 ```
 GitGauge/
 ├── app/
-│   ├── main.py                # FastAPI entrypoint
-│   ├── config.py              # Environment settings
 │   ├── api/
 │   │   ├── routers/
-│   │   │   └── jobs.py        # Job endpoints
+│   │   │   └── jobs.py          # Job API endpoints
 │   │   └── schemas/
-│   │       └── jobs.py         # Request/Response models
-│   ├── services/
-│   │   ├── job_service.py     # Job business logic
-│   │   └── analysis_service.py# Analysis workflow
-│   ├── integrations/
-│   │   ├── github_client.py   # GitHub API wrapper
-│   │   └── ai_client.py       # AI API wrapper
-│   ├── workers/
-│   │   ├── tasks.py           # Background tasks
-│   │   └── queue.py           # Queue abstraction
+│   │       └── jobs.py          # Pydantic models
 │   ├── db/
-│   │   ├── base.py            # Database connection
-│   │   ├── models.py          # SQLAlchemy models
-│   │   └── repositories.py    # Database operations
-│   ├── templates/
-│   │   └── index.html         # Home page
-│   └── static/
-│       └── style.css          # Home page styles
-├── requirements.txt
-├── .env.example
-└── README.md
+│   │   ├── base.py              # Database configuration
+│   │   ├── models.py            # SQLAlchemy models
+│   │   └── repositories.py      # Data access layer
+│   ├── integrations/
+│   │   ├── github_client.py     # GitHub API client
+│   │   └── ai_client.py         # AI analysis client
+│   ├── services/
+│   │   └── analysis_service.py  # Business logic
+│   ├── utils/
+│   │   ├── logging.py           # Logging utilities
+│   │   └── id_gen.py            # ID generation
+│   ├── workers/
+│   │   ├── tasks.py             # Background job processing
+│   │   ├── queue.py             # Job queue management
+│   │   └── redis_manager.py     # Redis operations
+│   ├── static/                  # Static files
+│   ├── templates/               # HTML templates
+│   ├── config.py                # Configuration
+│   └── main.py                  # FastAPI application
+├── requirements.txt             # Python dependencies
+├── env.example                  # Environment template
+└── README.md                    # This file
 ```
 
-### Phase Development
+### Running Tests
 
-- **Phase 1**: ✅ Project scaffolding and basic setup
-- **Phase 2**: ✅ API + DB setup with home page
-- **Phase 3**: Background task + mock analysis
-- **Phase 4**: GitHub integration
-- **Phase 5**: AI/LLM integration
-- **Phase 6**: Final report persistence
+```bash
+# Run the application
+python -m uvicorn app.main:app --reload
 
-## 🔗 Links
+# Test API endpoints
+curl -X POST "http://localhost:8000/api/jobs/" \
+  -H "Content-Type: application/json" \
+  -d '{"github_username": "torvalds", "skills": ["C", "Linux"]}'
+```
 
-- **Home Page**: http://localhost:8000/
-- **API Documentation**: http://localhost:8000/docs
-- **Alternative Docs**: http://localhost:8000/redoc
-- **Health Check**: http://localhost:8000/health
+### Logging
 
-## 📝 License
+The application includes comprehensive logging:
 
-This project is licensed under the MIT License.
+- **Request Logging**: All HTTP requests and responses
+- **Job Progress**: Detailed job processing steps
+- **Error Handling**: Contextual error logging
+- **Performance**: Timing and resource usage
+
+Logs are output to console with color coding and can be configured for file output.
+
+## 🚀 Deployment
+
+### Production Considerations
+
+1. **Environment Variables**: Set all required environment variables
+2. **Database**: Use production PostgreSQL instance
+3. **Redis**: Use production Redis instance
+4. **API Keys**: Ensure all API keys are properly configured
+5. **Logging**: Configure file-based logging for production
+6. **Monitoring**: Set up application monitoring
+7. **Rate Limiting**: Configure appropriate rate limits
+
+### Docker Deployment
+
+```dockerfile
+FROM python:3.9-slim
+
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+
+COPY . .
+EXPOSE 8000
+
+CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+```
 
 ## 🤝 Contributing
 
@@ -250,6 +342,21 @@ This project is licensed under the MIT License.
 4. Add tests if applicable
 5. Submit a pull request
 
-## 📞 Support
+## 📄 License
 
-For questions or support, please open an issue in the repository.
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 🆘 Support
+
+For support and questions:
+- Create an issue in the repository
+- Check the API documentation at `/docs` when running the application
+- Review the logs for debugging information
+
+## 🎉 Acknowledgments
+
+- FastAPI for the excellent web framework
+- Groq for AI model access
+- GitHub for the comprehensive API
+- PostgreSQL and Redis for data storage
+- The open-source community for inspiration and tools
