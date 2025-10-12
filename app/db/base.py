@@ -26,7 +26,12 @@ def get_db():
         db.close()
 
 
-def create_tables():
-    """Create all database tables"""
+async def create_tables():
+    """Create all database tables (async version)"""
     from app.db.models import Base
     Base.metadata.create_all(bind=engine)
+
+
+def get_db_session():
+    """Get a database session (non-dependency version)"""
+    return SessionLocal()
