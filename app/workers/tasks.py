@@ -7,6 +7,7 @@ from app.db.repositories import JobRepository, JobArtifactRepository
 from app.db.models import JobStatus
 from app.integrations.github_client import github_client
 from app.integrations.ai_client import ai_client
+from app.utils.logging import log_job_progress, log_error_with_context
 import json
 from datetime import datetime
 
@@ -27,7 +28,7 @@ async def analyze_repositories(repos: list, skills: list, username: str) -> Dict
             "overall_assessment": {"decision_hint": "no", "justification": "No relevant repositories found"}
         }
     
-    print(f"🤖 Using AI analysis for {len(repos)} repositories")
+    log_job_progress("analysis", "ai_analysis", f"Starting AI analysis for {len(repos)} repositories")
     
     # Prepare GitHub data for AI analysis
     github_data = {
@@ -53,11 +54,11 @@ async def analyze_repositories(repos: list, skills: list, username: str) -> Dict
         # Add summary to the analysis
         ai_analysis["summary"] = summary
         
-        print(f"✅ AI analysis completed successfully")
+        log_job_progress("analysis", "ai_analysis", "AI analysis completed successfully")
         return ai_analysis
         
     except Exception as e:
-        print(f"⚠️ AI analysis failed, falling back to basic analysis: {str(e)}")
+        log_job_progress("analysis", "ai_analysis", f"AI analysis failed, using fallback: {str(e)}", "WARNING")
         
         # Fallback to basic analysis if AI fails
         return await _basic_analysis_fallback(repos, skills, username)
@@ -214,31 +215,35 @@ async def _basic_analysis_fallback(repos: list, skills: list, username: str) -> 
 async def process_analysis_job(job_id: str, github_username: str, skills: list):
     """
     Background task to process GitHub analysis job
-    Phase 4: Real GitHub integration
+    Phase 6: Complete AI-powered analysis with comprehensive logging
     """
     try:
+        log_job_progress(job_id, "startup", f"Starting analysis for {github_username}")
+        
         # Update status to running
         await job_queue.update_job_status(job_id, "running")
-        
-        print(f"🔍 Starting GitHub analysis for {github_username} with skills: {skills}")
+        log_job_progress(job_id, "status", "Job status updated to running")
         
         # Fetch repositories matching the skills
         try:
+            log_job_progress(job_id, "github", f"Fetching repositories for {github_username}")
             relevant_repos = await github_client.search_repositories_by_skills(
                 username=github_username,
                 skills=skills,
                 limit=5  # Top 5 most relevant repos
             )
+            log_job_progress(job_id, "github", f"Found {len(relevant_repos)} relevant repositories")
         except Exception as e:
-            print(f"❌ GitHub API error: {str(e)}")
+            log_error_with_context(e, {"job_id": job_id, "github_username": github_username, "stage": "github_fetch"})
             raise Exception(f"Failed to fetch GitHub data: {str(e)}")
         
         if not relevant_repos:
-            raise Exception(f"No repositories found matching skills: {', '.join(skills)}")
-        
-        print(f"📊 Found {len(relevant_repos)} relevant repositories")
+            error_msg = f"No repositories found matching skills: {', '.join(skills)}"
+            log_job_progress(job_id, "github", error_msg, "WARNING")
+            raise Exception(error_msg)
         
         # Analyze the repositories
+        log_job_progress(job_id, "analysis", "Starting repository analysis")
         analysis_data = await analyze_repositories(relevant_repos, skills, github_username)
         
         # Create analysis report
@@ -256,6 +261,8 @@ async def process_analysis_job(job_id: str, github_username: str, skills: list):
             "overall_assessment": analysis_data["overall_assessment"]
         }
         
+        log_job_progress(job_id, "database", "Storing analysis results in database")
+        
         # Store result in database
         from app.db.base import get_db_session
         db = get_db_session()
@@ -267,6 +274,7 @@ async def process_analysis_job(job_id: str, github_username: str, skills: list):
             job = job_repo.get_job_by_id(job_id)
             if job:
                 job_repo.update_job_status(job_id, JobStatus.COMPLETED)
+                log_job_progress(job_id, "database", "Job status updated to completed")
                 
                 # Create artifact with real GitHub data
                 artifact_repo.create_artifact(
@@ -274,17 +282,22 @@ async def process_analysis_job(job_id: str, github_username: str, skills: list):
                     raw_sources={"github_repos": relevant_repos},
                     report=analysis_report
                 )
+                log_job_progress(job_id, "database", "Analysis report stored successfully")
         finally:
             db.close()
         
         # Update Redis status
         await job_queue.update_job_status(job_id, "completed", result=analysis_report)
-        
-        print(f"✅ Job {job_id} completed successfully")
+        log_job_progress(job_id, "completion", "Job completed successfully")
         
     except Exception as e:
-        # Handle errors
-        print(f"❌ Job {job_id} failed: {str(e)}")
+        # Handle errors with comprehensive logging
+        log_error_with_context(e, {
+            "job_id": job_id, 
+            "github_username": github_username, 
+            "skills": skills,
+            "stage": "job_processing"
+        })
         
         # Update database with error
         try:
@@ -298,13 +311,18 @@ async def process_analysis_job(job_id: str, github_username: str, skills: list):
                     error_code="PROCESSING_ERROR",
                     error_message=str(e)
                 )
+                log_job_progress(job_id, "error", "Job status updated to failed in database")
             finally:
                 db.close()
         except Exception as db_error:
-            print(f"Failed to update job status in DB: {db_error}")
+            log_error_with_context(db_error, {
+                "job_id": job_id,
+                "stage": "database_error_update"
+            })
         
         # Update Redis status
         await job_queue.update_job_status(job_id, "failed", error=str(e))
+        log_job_progress(job_id, "error", "Job marked as failed in Redis")
 
 
 async def start_background_processor():
