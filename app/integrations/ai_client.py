@@ -61,14 +61,14 @@ class AIClient:
         
         for repo in repos[:5]:  # Limit to top 5 repos
             repo_info = f"""
-Repository: {repo.get('full_name', 'Unknown')}
-Description: {repo.get('description', 'No description')}
-Languages: {', '.join(repo.get('languages', {}).keys())}
-Stars: {repo.get('stars', 0)}
-Size: {repo.get('size', 0)} KB
-Updated: {repo.get('updated_at', 'Unknown')}
-Matched Skills: {', '.join(repo.get('matched_skills', []))}
-"""
+                    Repository: {repo.get('full_name', 'Unknown')}
+                    Description: {repo.get('description', 'No description')}
+                    Languages: {', '.join(repo.get('languages', {}).keys())}
+                    Stars: {repo.get('stars', 0)}
+                    Size: {repo.get('size', 0)} KB
+                    Updated: {repo.get('updated_at', 'Unknown')}
+                    Matched Skills: {', '.join(repo.get('matched_skills', []))}
+                """
             repo_summaries.append(repo_info)
         
         prompt = f"""

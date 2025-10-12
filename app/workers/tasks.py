@@ -15,7 +15,6 @@ from datetime import datetime
 async def analyze_repositories(repos: list, skills: list, username: str) -> Dict[str, Any]:
     """
     Analyze GitHub repositories using AI for comprehensive candidate assessment
-    Phase 5: Enhanced AI-powered analysis
     """
     if not repos:
         return {
@@ -215,7 +214,6 @@ async def _basic_analysis_fallback(repos: list, skills: list, username: str) -> 
 async def process_analysis_job(job_id: str, github_username: str, skills: list):
     """
     Background task to process GitHub analysis job
-    Phase 6: Complete AI-powered analysis with comprehensive logging
     """
     try:
         log_job_progress(job_id, "startup", f"Starting analysis for {github_username}")

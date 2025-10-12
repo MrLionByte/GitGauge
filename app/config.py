@@ -30,6 +30,9 @@ class Settings(BaseSettings):
     # Rate Limiting
     RATE_LIMIT_PER_MINUTE: int = 15
     RATE_LIMIT_PER_HOUR: int = 100
+
+    # Logger Setup
+    LOGTAIL_TOKEN: str
     
     class Config:
         env_file = ".env"

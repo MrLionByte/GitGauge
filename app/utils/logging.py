@@ -1,8 +1,13 @@
+import os
 import logging
 import sys
 from datetime import datetime
 from typing import Optional
 import traceback
+from app.config import settings
+from logtail import LogtailHandler
+
+LOGTAIL_TOKEN = settings.LOGTAIL_TOKEN
 
 
 class ColoredFormatter(logging.Formatter):
@@ -170,5 +175,13 @@ def log_error_with_context(error: Exception, context: dict = None):
     logger.debug(f"Traceback: {traceback.format_exc()}")
 
 
+os.makedirs("logs", exist_ok=True)
 # Global logger instance
-logger = setup_logging()
+logger = setup_logging(log_file="logs/gitgauge.log")
+
+if LOGTAIL_TOKEN:
+    handler = LogtailHandler(source_token=LOGTAIL_TOKEN)
+    logger.addHandler(handler)
+    logger.info("✅ Better Stack (Logtail) logging enabled")
+else:
+    logger.warning("⚠️ LOGTAIL_TOKEN not set — logs not sent to Better Stack")
