@@ -1,5 +1,6 @@
 # GitGauge 🎯
-[text](https://gitgauge.onrender.com/)
+### [Live Link](https://gitgauge.onrender.com/)
+
 **AI-Powered GitHub Candidate Screening Platform**
 
 GitGauge is a comprehensive technical recruitment tool that analyzes GitHub profiles to provide detailed candidate assessments using AI. It combines GitHub API data with advanced AI analysis to generate professional hiring recommendations.
