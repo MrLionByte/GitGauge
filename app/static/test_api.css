@@ -1,0 +1,234 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f0f2f5; /* Light gray background */
+    color: #333;
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 900px;
+    margin: 40px auto;
+    background: #ffffff;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+}
+
+h1 {
+    color: #1a73e8; /* Google Blue */
+    text-align: center;
+    border-bottom: 2px solid #e0e0e0;
+    padding-bottom: 15px;
+    margin-bottom: 25px;
+}
+
+h2 {
+    color: #3c4043; /* Darker gray for section headers */
+    font-size: 1.5rem;
+    margin-top: 30px;
+}
+
+h3 {
+    color: #5f6368;
+    font-size: 1.1rem;
+    margin-top: 20px;
+}
+
+hr {
+    border: 0;
+    height: 1px;
+    background-color: #e0e0e0;
+    margin: 30px 0;
+}
+
+/* --- Form Styling --- */
+label {
+    display: block;
+    margin-top: 15px;
+    font-weight: 600;
+    color: #3c4043;
+    font-size: 0.95rem;
+}
+
+input[type="text"], input[type="number"] {
+    width: 100%;
+    padding: 12px 15px;
+    margin-top: 6px;
+    margin-bottom: 15px;
+    border: 1px solid #dadce0; /* Light border */
+    border-radius: 8px;
+    box-sizing: border-box;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+input:focus {
+    border-color: #1a73e8;
+    box-shadow: 0 0 0 1px #1a73e8;
+    outline: none;
+}
+
+/* --- Button Styling --- */
+button {
+    background-color: #1a73e8; /* Primary Blue */
+    color: white;
+    padding: 12px 25px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: bold;
+    margin-top: 10px;
+    transition: background-color 0.3s, opacity 0.3s;
+}
+
+button:hover:not(:disabled) {
+    background-color: #174ea6;
+}
+
+button:disabled {
+    background-color: #a0c3e7; /* Lighter blue for disabled */
+    cursor: not-allowed;
+    opacity: 0.8;
+}
+
+/* --- Output & Status Styling --- */
+#raw-api-output-code, #status-message {
+    margin-top: 20px;
+    padding: 20px;
+    border-radius: 8px;
+    background-color: #f8f9fa; /* Very light gray for output areas */
+    border: 1px solid #e8e8e8;
+    white-space: pre-wrap;
+    font-family: monospace;
+    font-size: 0.9rem;
+}
+
+#status-message {
+    padding: 15px;
+    font-weight: bold;
+    font-size: 1rem;
+}
+
+.error {
+    background-color: #fde2e2; /* Light red */
+    color: #a50e0e; /* Dark red text */
+    border-color: #f7bbbb;
+}
+
+/* --- Loader Spinner --- */
+.loader {
+    border: 4px solid #e0e0e0;
+    border-top: 4px solid #1a73e8;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    animation: spin 1s linear infinite;
+    display: none;
+    margin: 25px auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.hidden {
+    display: none;
+}
+
+/* --- New Styles for Structured Report --- */
+
+/* Overall Assessment Box */
+.assessment-box {
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-size: 1.1rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.assessment-yes { background-color: #e6ffed; border: 1px solid #38c172; color: #1f6438; }
+.assessment-no { background-color: #ffe6e6; border: 1px solid #e3342f; color: #7f1717; }
+.assessment-maybe { background-color: #fff9e6; border: 1px solid #ffcc00; color: #705b00; }
+
+/* Tables */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+    table-layout: fixed; /* Ensures columns are respected */
+}
+.data-table th, .data-table td {
+    padding: 12px;
+    border: 1px solid #e0e0e0;
+    text-align: left;
+    vertical-align: top;
+    word-wrap: break-word; /* Prevents overflow */
+}
+.data-table th {
+    background-color: #f8f8f8;
+    font-weight: 600;
+}
+.data-table ul {
+    padding-left: 20px;
+    margin: 0;
+    list-style: disc;
+}
+
+/* Quality and Habits Grid */
+.quality-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+}
+.description-list {
+    display: grid;
+    grid-template-columns: 140px 1fr; /* Adjusted width for labels */
+    gap: 5px 10px;
+}
+.description-list dt {
+    font-weight: 600;
+    color: #5f6368;
+}
+
+/* Skill Strength & Quality Ratings (Color Coding) */
+.skill-strength {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-weight: bold;
+}
+.strength-5, .strength-4, .excellent, .good { background-color: #38c172; color: white; }
+.strength-3, .adequate, .medium { background-color: #ffcc00; color: #333; }
+.strength-2, .strength-1, .poor { background-color: #e3342f; color: white; }
+
+/* Risk Flags */
+.risk-item {
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+.risk-medium { background-color: #ffe6e6; border-left: 4px solid #e3342f; }
+.risk-low { background-color: #fff9e6; border-left: 4px solid #ffcc00; }
+
+/* Interview Questions */
+.question-item {
+    margin-bottom: 15px;
+    padding: 10px;
+    border-left: 4px solid #1a73e8;
+    background-color: #f0f6ff;
+    border-radius: 4px;
+}
+.difficulty-badge {
+    font-size: 0.8em;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: bold;
+    margin-left: 10px;
+    background-color: #555;
+    color: white;
+}
+.difficulty-intermediate .difficulty-badge { background-color: #ff9900; }
+.difficulty-advanced .difficulty-badge { background-color: #e3342f; }
+.difficulty-beginner .difficulty-badge { background-color: #38c172; }

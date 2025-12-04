@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitGauge API Tester - Complete Solution</title>
+    <link rel="icon" href="/static/icon/git-gauge-icon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="/static/test_api.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🛠️ GitGauge API Test Interface</h1>
+
+        <section id="job-creation-section">
+            <h2>Create New Analysis Job</h2>
+            <p><strong>Note:</strong> If you are testing locally, replace the actual url with local url.</p>
+            <form id="create-job-form">
+                <label for="backendUrl">Backend URL</label>
+                <input type="text" id="backendUrl" value="https://gitgauge.onrender.com" required>
+                
+                <label for="githubUsername">GitHub Username*</label>
+                <input type="text" id="githubUsername" value="octocat" placeholder="e.g., octocat" required>
+                
+                <label for="skills">Skills (Comma separated)</label>
+                <input type="text" id="skills" value="Python,JavaScript,React" placeholder="e.g., Python,JavaScript,React">
+
+                <label for="repoLimit">Repo Limit</label>
+                <input type="number" id="repoLimit" value="5" placeholder="Default: 5">
+
+                <label for="maxFilesPerRepo">Max Files Per Repo</label>
+                <input type="number" id="maxFilesPerRepo" value="3" placeholder="Default: 3">
+
+                <button type="submit" id="submit-button">Submit Analysis Job</button>
+            </form>
+        </section>
+
+        <hr>
+
+        <div id="loader" class="loader"></div>
+        <div id="status-message" class="hidden"></div>
+        
+        <section id="job-results-container" class="hidden">
+            <section id="structured-report-section">
+                <h2>Job Status & Structured Report 📝</h2>
+                <p><strong>Job ID:</strong> <span id="displayed-job-id">N/A</span></p>
+                <div id="structured-report-output"></div>
+            </section>
+
+            <hr>
+
+            <section>
+                <h3>Raw API Output (For Developers):</h3>
+                <div id="raw-api-output-code" class="code-block">Waiting for data...</div>
+            </section>
+        </section>
+
+    </div>
+
+    <script>
+        const BACKEND_URL_INPUT = document.getElementById('backendUrl');
+        const CREATE_JOB_FORM = document.getElementById('create-job-form');
+        const SUBMIT_BUTTON = document.getElementById('submit-button');
+        const LOADER = document.getElementById('loader');
+        const STATUS_MESSAGE = document.getElementById('status-message');
+        const JOB_RESULTS_CONTAINER = document.getElementById('job-results-container');
+        const DISPLAYED_JOB_ID = document.getElementById('displayed-job-id');
+        const RAW_API_OUTPUT_CODE = document.getElementById('raw-api-output-code');
+        const STRUCTURED_REPORT_OUTPUT = document.getElementById('structured-report-output');
+
+        let jobId = null;
+        let pollInterval = null;
+
+        // --- Utility Functions ---
+
+        /**
+         * Shows a message (error or success) to the user.
+         */
+        function showMessage(message, isError = false) {
+            STATUS_MESSAGE.innerHTML = message;
+            STATUS_MESSAGE.className = isError ? 'error' : '';
+            STATUS_MESSAGE.classList.remove('hidden');
+        }
+
+        /**
+         * Clears all status messages and results, and re-enables the button.
+         * @param {boolean} reEnableButton If true, re-enables the submit button.
+         * @param {boolean} clearResults If true, clears the results output (default: true).
+         */
+        function clearStatus(reEnableButton = true, clearResults = true) {
+            STATUS_MESSAGE.innerHTML = '';
+            STATUS_MESSAGE.classList.add('hidden');
+            LOADER.style.display = 'none';
+            
+            if (clearResults) {
+                JOB_RESULTS_CONTAINER.classList.add('hidden');
+                RAW_API_OUTPUT_CODE.textContent = 'Waiting for data...';
+                STRUCTURED_REPORT_OUTPUT.innerHTML = '';
+                DISPLAYED_JOB_ID.textContent = 'N/A';
+            }
+            
+            if (reEnableButton) {
+                SUBMIT_BUTTON.disabled = false;
+                SUBMIT_BUTTON.textContent = 'Submit Analysis Job';
+            }
+        }
+
+        // --- Report Rendering Function ---
+
+        /**
+         * Converts the JSON report object into structured HTML content.
+         * @param {object} data The complete JSON response object.
+         * @returns {string} HTML string for display.
+         */
+        function renderStructuredReport(data) {
+            if (data.status !== 'completed' || !data.report) {
+                return `<p>Job Status: <strong>${data.status.toUpperCase()}</strong></p>
+                        <p>Report is not yet available or failed. Check the Raw Output for details.</p>`;
+            }
+
+            const report = data.report;
+            let html = `
+                <div class="report-header">
+                    <h2>Overall Assessment 🎯</h2>
+                    <div class="assessment-box assessment-${report.overall_assessment.decision_hint}">
+                        <strong>Decision Hint: ${report.overall_assessment.decision_hint.toUpperCase()}</strong>
+                        <p>${report.overall_assessment.justification}</p>
+                    </div>
+                    <p><strong>Candidate:</strong> ${report.candidate.github_username}</p>
+                    <p><strong>Summary:</strong> ${report.candidate.summary_of_work}</p>
+                    <p><strong>Generated At:</strong> ${new Date(data.generated_at).toLocaleString()}</p>
+                </div>
+                
+                <hr>
+
+                <section class="skills-section">
+                    <h2>Skills Match Analysis 🧠</h2>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 15%;">Skill</th>
+                                <th style="width: 10%;">Strength (1-5)</th>
+                                <th style="width: 40%;">Evidence Snippets</th>
+                                <th style="width: 35%;">Repositories</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            // 1. Skills Match Table
+            report.skills_match.forEach(item => {
+                const evidence = item.evidence_snippets.map(s => `<li>${s}</li>`).join('');
+                const repos = item.repos_referenced.map(r => `<li>${r}</li>`).join('');
+                html += `
+                    <tr>
+                        <td><strong>${item.skill}</strong></td>
+                        <td><span class="skill-strength strength-${item.strength}">${item.strength}</span></td>
+                        <td><ul>${evidence.length > 0 ? evidence : '<li>N/A</li>'}</ul></td>
+                        <td><ul>${repos.length > 0 ? repos : '<li>N/A</li>'}</ul></td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                        </tbody>
+                    </table>
+                </section>
+
+                <hr>
+
+                <section class="quality-section">
+                    <div class="quality-grid">
+                        <div>
+                            <h2>Code Quality & Habits ⚙️</h2>
+                            <dl class="description-list">
+                                <dt>Code Style:</dt><dd class="${report.code_quality.style.toLowerCase()}">${report.code_quality.style}</dd>
+                                <dt>Readability:</dt><dd class="${report.code_quality.readability.toLowerCase()}">${report.code_quality.readability}</dd>
+                                <dt>Testing:</dt><dd class="${report.code_quality.testing.toLowerCase()}">${report.code_quality.testing}</dd>
+                                <dt>Documentation:</dt><dd class="${report.code_quality.documentation.toLowerCase()}">${report.code_quality.documentation}</dd>
+                                <dt>Security:</dt><dd class="${report.code_quality.security.toLowerCase()}">${report.code_quality.security}</dd>
+                            </dl>
+                        </div>
+                        <div>
+                            <h2>Commit Habits</h2>
+                            <dl class="description-list">
+                                <dt>Frequency:</dt><dd>${report.commit_habits.frequency}</dd>
+                                <dt>Message Quality:</dt><dd>${report.commit_habits.message_quality}</dd>
+                                <dt>Collaboration Signals:</dt><dd>${report.commit_habits.collaboration_signals}</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </section>
+
+                <hr>
+
+                <section class="risks-section">
+                    <h2>Risk Flags ⚠️</h2>
+                    ${report.risk_flags.length > 0 ? report.risk_flags.map(risk => `
+                        <div class="risk-item risk-${risk.severity}">
+                            <strong>${risk.flag}</strong> (${risk.severity.toUpperCase()})
+                            <p>${risk.description}</p>
+                        </div>
+                    `).join('') : '<p>No significant risk flags were identified.</p>'}
+                </section>
+
+                <hr>
+
+                <section class="interview-section">
+                    <h2>Suggested Interview Questions ❓</h2>
+                    <ol>
+                        ${report.interview_questions.map(q => `
+                            <li class="question-item difficulty-${q.difficulty}">
+                                <strong>${q.question}</strong> 
+                                <span class="difficulty-badge">${q.difficulty.toUpperCase()}</span>
+                                <p><em>Rationale:</em> ${q.rationale}</p>
+                            </li>
+                        `).join('')}
+                    </ol>
+                </section>
+            `;
+            return html;
+        }
+
+        // --- API Call Functions ---
+
+        CREATE_JOB_FORM.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Clear previous results and disable button
+            clearStatus(false, true); 
+            
+            SUBMIT_BUTTON.disabled = true;
+            SUBMIT_BUTTON.textContent = 'Submitting...';
+            LOADER.style.display = 'block';
+            showMessage('Submitting job request...');
+            
+            // Get values from form (uses 'value' for default fallback)
+            const backendUrl = BACKEND_URL_INPUT.value.trim().replace(/\/+$/, '');
+            const githubUsername = document.getElementById('githubUsername').value;
+            const skillsValue = document.getElementById('skills').value;
+            // Ensure skills is an array, even if the input is empty (resulting in an empty array)
+            const skills = skillsValue.split(',').map(s => s.trim()).filter(s => s.length > 0); 
+            const repoLimit = parseInt(document.getElementById('repoLimit').value) || 5; // Use default if NaN
+            const maxFilesPerRepo = parseInt(document.getElementById('maxFilesPerRepo').value) || 3; // Use default if NaN
+
+            const requestBody = {
+                github_username: githubUsername,
+                skills: skills,
+                repo_limit: repoLimit,
+                max_files_per_repo: maxFilesPerRepo
+            };
+
+            try {
+                const response = await fetch(`${backendUrl}/api/jobs`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    jobId = data.job_id;
+                    DISPLAYED_JOB_ID.textContent = jobId;
+                    
+                    showMessage(`Job created successfully. ID: <strong>${jobId}</strong>. Status: ${data.status}. Estimated wait: ${data.estimated_wait_seconds || 'N/A'}s. Starting status check...`);
+
+                    pollInterval = setInterval(() => checkJobStatus(backendUrl, jobId), 5000); 
+                } else {
+                    clearStatus(true, true); 
+                    showMessage(`Error creating job (Status ${response.status}): <code>${JSON.stringify(data)}</code>`, true);
+                }
+            } catch (error) {
+                clearStatus(true, true);
+                showMessage(`Network or CORS Error: Could not reach the API at <strong>${backendUrl}/api/jobs</strong>. ${error.message}`, true);
+            }
+        });
+
+
+        /**
+         * Step 2: Polls the API for job status (GET /api/jobs/{job_id}).
+         */
+        async function checkJobStatus(backendUrl, id) {
+            try {
+                const response = await fetch(`${backendUrl}/api/jobs/${id}`);
+                const data = await response.json();
+
+                if (response.ok) {
+                    // 1. Update Raw Output (kept for debugging)
+                    RAW_API_OUTPUT_CODE.textContent = JSON.stringify(data, null, 2);
+                    
+                    // 2. Render structured report
+                    STRUCTURED_REPORT_OUTPUT.innerHTML = renderStructuredReport(data);
+                    
+                    // 3. Show container
+                    JOB_RESULTS_CONTAINER.classList.remove('hidden');
+
+                    if (data.status === 'completed') {
+                        clearInterval(pollInterval);
+                        
+                        // Re-enable button and hide loader without clearing output
+                        SUBMIT_BUTTON.disabled = false;
+                        SUBMIT_BUTTON.textContent = 'Submit Analysis Job';
+                        LOADER.style.display = 'none';
+                        
+                        showMessage('Analysis **COMPLETED** successfully. Scroll down for the structured report.', false);
+                    } else if (data.status === 'failed') {
+                        clearInterval(pollInterval);
+                        clearStatus(true, false); // Re-enable button, but DO NOT clear results (keep the failure report)
+                        showMessage(`Analysis **FAILED**. Check the output below for details.`, true);
+                    } else {
+                        // queued or running
+                        showMessage(`Job status: <strong>${data.status.toUpperCase()}</strong>. Polling for results...`);
+                    }
+                } else {
+                    // Non-200 status during polling
+                    clearInterval(pollInterval);
+                    clearStatus(true, true);
+                    showMessage(`Error checking job status (Status ${response.status}). Stopping poll. Output: <code>${JSON.stringify(data)}</code>`, true);
+                }
+            } catch (error) {
+                // Network error during polling
+                clearInterval(pollInterval);
+                clearStatus(true, true);
+                showMessage(`Network Error during status check: ${error.message}. Stopping poll.`, true);
+            }
+        }
+
+        clearStatus(true, true);
+    </script>
+</body>
+</html>
