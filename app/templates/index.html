@@ -16,6 +16,7 @@
             <h1>🔍 GitGauge</h1>
             <p class="subtitle">Tech Candidate Screening API</p>
             <p class="description">Automated GitHub profile analysis for intelligent hiring decisions</p>
+            <a href="/test-api">Test Api</a>
         </header>
 
         <main>
@@ -189,12 +190,24 @@
                 </div>
             </section>
 
+            <section class="test-api">
+                <h2>📝 Interactive API Tester</h2>
+                <p class="description">
+                    Quickly test the GitGauge API endpoints and view structured results.
+                </p>
+                <div class="cta-button-container">
+                    <a href="/test-api" class="button primary">
+                        Launch API Tester 🧪
+                    </a>
+                </div>
+            </section>
+
             <section class="quick-start">
                 <h2>🚀 Quick Start</h2>
                 <div class="example">
                     <h3>Example: Analyze a Python Developer</h3>
                     <pre><code class="language-bash"># Create a job
-curl -X POST "http://localhost:8000/api/jobs" \
+curl -X POST "backend url" + "/api/jobs" \
   -H "Content-Type: application/json" \
   -d '{
     "github_username": "octocat",
@@ -204,10 +217,10 @@ curl -X POST "http://localhost:8000/api/jobs" \
   }'
 
 # Check job status
-curl "http://localhost:8000/api/jobs/{job_id}"
+curl "backend url" + "/api/jobs/{job_id}"
 
 # List all jobs
-curl "http://localhost:8000/api/jobs"</code></pre>
+curl "backend url" + "/api/jobs"</code></pre>
                 </div>
             </section>
         </main>

@@ -107,6 +107,14 @@ async def home(request: Request):
     logger.info("🏠 Home page accessed")
     return templates.TemplateResponse("index.html", {"request": request})
 
+
+@app.get("/test-api", response_class=HTMLResponse)
+async def home(request: Request):
+    """Test Api page with API interaction"""
+    logger.info("📝 Api test accessed")
+    return templates.TemplateResponse("test_api.html", {"request": request})
+
+
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""
