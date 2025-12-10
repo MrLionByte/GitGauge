@@ -29,7 +29,6 @@ async def analyze_repositories(repos: list, skills: list, username: str) -> Dict
     
     log_job_progress("analysis", "ai_analysis", f"Starting AI analysis for {len(repos)} repositories")
     
-    # Prepare GitHub data for AI analysis
     github_data = {
         "repos": repos,
         "username": username,
@@ -39,10 +38,8 @@ async def analyze_repositories(repos: list, skills: list, username: str) -> Dict
     }
     
     try:
-        # Use AI client for enhanced analysis
         ai_analysis = await ai_client.analyze_candidate(github_data, skills, username)
         
-        # Generate summary from AI analysis
         top_skills = [skill["skill"] for skill in ai_analysis.get("skills_match", []) if skill.get("strength", 0) >= 3]
         summary = f"Active developer with {len(repos)} relevant repositories"
         if top_skills:
@@ -50,7 +47,6 @@ async def analyze_repositories(repos: list, skills: list, username: str) -> Dict
         if github_data["total_stars"] > 0:
             summary += f" with {github_data['total_stars']} total stars"
         
-        # Add summary to the analysis
         ai_analysis["summary"] = summary
         
         log_job_progress("analysis", "ai_analysis", "AI analysis completed successfully")
@@ -59,7 +55,6 @@ async def analyze_repositories(repos: list, skills: list, username: str) -> Dict
     except Exception as e:
         log_job_progress("analysis", "ai_analysis", f"AI analysis failed, using fallback: {str(e)}", "WARNING")
         
-        # Fallback to basic analysis if AI fails
         return await _basic_analysis_fallback(repos, skills, username)
 
 
@@ -67,7 +62,6 @@ async def _basic_analysis_fallback(repos: list, skills: list, username: str) -> 
     """
     Fallback basic analysis when AI is not available
     """
-    # Analyze skills match
     skills_match = []
     for skill in skills:
         skill_lower = skill.lower()
@@ -93,21 +87,18 @@ async def _basic_analysis_fallback(repos: list, skills: list, username: str) -> 
                 if repo["full_name"] not in repos_referenced:
                     repos_referenced.append(repo["full_name"])
         
-        # Normalize strength to 1-5 scale
         normalized_strength = min(5, max(1, strength))
         
         skills_match.append({
             "skill": skill,
             "strength": normalized_strength,
-            "evidence_snippets": evidence_snippets[:3],  # Limit to top 3
-            "repos_referenced": repos_referenced[:3]  # Limit to top 3
+            "evidence_snippets": evidence_snippets[:5],  # Limit to top 5
+            "repos_referenced": repos_referenced[:5]  # Limit to top 5
         })
     
-    # Analyze code quality based on repository characteristics
     total_stars = sum(repo.get("stars", 0) for repo in repos)
     avg_stars = total_stars / len(repos) if repos else 0
     
-    # Check for testing indicators
     testing_indicators = 0
     for repo in repos:
         if any(keyword in repo.get("description", "").lower() for keyword in ["test", "testing", "spec", "unit"]):
@@ -115,7 +106,6 @@ async def _basic_analysis_fallback(repos: list, skills: list, username: str) -> 
         if any(keyword in repo.get("name", "").lower() for keyword in ["test", "spec"]):
             testing_indicators += 1
     
-    # Check for documentation indicators
     doc_indicators = 0
     for repo in repos:
         if repo.get("readme_preview"):
@@ -131,7 +121,6 @@ async def _basic_analysis_fallback(repos: list, skills: list, username: str) -> 
         "security": "Good" if any("security" in repo.get("description", "").lower() for repo in repos) else "Adequate"
     }
     
-    # Analyze commit habits (simplified based on repository activity)
     recent_repos = [repo for repo in repos if repo.get("updated_at")]
     commit_habits = {
         "frequency": "Regular" if len(recent_repos) > 2 else "Occasional",
@@ -139,23 +128,21 @@ async def _basic_analysis_fallback(repos: list, skills: list, username: str) -> 
         "collaboration_signals": "Active" if total_stars > 5 else "Limited"
     }
     
-    # Generate interview questions based on skills and repositories
     interview_questions = []
-    for skill in skills[:2]:  # Top 2 skills
+    for skill in skills[:6]:
         interview_questions.append({
             "question": f"Can you walk me through your experience with {skill} based on your GitHub projects?",
             "rationale": f"Assess practical {skill} experience through real projects",
             "difficulty": "intermediate"
         })
     
-    if len(repos) > 3:
+    if len(repos) > 5:
         interview_questions.append({
             "question": "I see you have multiple repositories. How do you organize and maintain your projects?",
             "rationale": "Assess project management and organization skills",
             "difficulty": "intermediate"
         })
     
-    # Identify risk flags
     risk_flags = []
     if avg_stars < 1 and len(repos) > 5:
         risk_flags.append({
@@ -171,7 +158,6 @@ async def _basic_analysis_fallback(repos: list, skills: list, username: str) -> 
             "severity": "low"
         })
     
-    # Overall assessment
     avg_skill_strength = sum(skill["strength"] for skill in skills_match) / len(skills_match) if skills_match else 0
     
     if avg_skill_strength >= 4 and len(repos) >= 2:
@@ -192,7 +178,6 @@ async def _basic_analysis_fallback(repos: list, skills: list, username: str) -> 
         "justification": justification
     }
     
-    # Generate summary
     top_skills = [skill["skill"] for skill in skills_match if skill["strength"] >= 3]
     summary = f"Active developer with {len(repos)} relevant repositories"
     if top_skills:
@@ -218,17 +203,15 @@ async def process_analysis_job(job_id: str, github_username: str, skills: list):
     try:
         log_job_progress(job_id, "startup", f"Starting analysis for {github_username}")
         
-        # Update status to running
         await job_queue.update_job_status(job_id, "running")
         log_job_progress(job_id, "status", "Job status updated to running")
         
-        # Fetch repositories matching the skills
         try:
             log_job_progress(job_id, "github", f"Fetching repositories for {github_username}")
             relevant_repos = await github_client.search_repositories_by_skills(
                 username=github_username,
                 skills=skills,
-                limit=5  # Top 5 most relevant repos
+                limit=10
             )
             log_job_progress(job_id, "github", f"Found {len(relevant_repos)} relevant repositories")
         except Exception as e:
@@ -240,16 +223,14 @@ async def process_analysis_job(job_id: str, github_username: str, skills: list):
             log_job_progress(job_id, "github", error_msg, "WARNING")
             raise Exception(error_msg)
         
-        # Analyze the repositories
         log_job_progress(job_id, "analysis", "Starting repository analysis")
         analysis_data = await analyze_repositories(relevant_repos, skills, github_username)
         
-        # Create analysis report
         analysis_report = {
             "candidate": {
                 "github_username": github_username,
                 "summary_of_work": analysis_data["summary"],
-                "notable_repos": [repo["full_name"] for repo in relevant_repos[:3]]
+                "notable_repos": [repo["full_name"] for repo in relevant_repos[:5]]
             },
             "skills_match": analysis_data["skills_match"],
             "code_quality": analysis_data["code_quality"],
@@ -261,20 +242,17 @@ async def process_analysis_job(job_id: str, github_username: str, skills: list):
         
         log_job_progress(job_id, "database", "Storing analysis results in database")
         
-        # Store result in database
         from app.db.base import get_db_session
         db = get_db_session()
         try:
             job_repo = JobRepository(db)
             artifact_repo = JobArtifactRepository(db)
             
-            # Update job status
             job = job_repo.get_job_by_id(job_id)
             if job:
                 job_repo.update_job_status(job_id, JobStatus.COMPLETED)
                 log_job_progress(job_id, "database", "Job status updated to completed")
                 
-                # Create artifact with real GitHub data
                 artifact_repo.create_artifact(
                     job_id=job_id,
                     raw_sources={"github_repos": relevant_repos},
@@ -284,12 +262,10 @@ async def process_analysis_job(job_id: str, github_username: str, skills: list):
         finally:
             db.close()
         
-        # Update Redis status
         await job_queue.update_job_status(job_id, "completed", result=analysis_report)
         log_job_progress(job_id, "completion", "Job completed successfully")
         
     except Exception as e:
-        # Handle errors with comprehensive logging
         log_error_with_context(e, {
             "job_id": job_id, 
             "github_username": github_username, 
@@ -297,7 +273,6 @@ async def process_analysis_job(job_id: str, github_username: str, skills: list):
             "stage": "job_processing"
         })
         
-        # Update database with error
         try:
             from app.db.base import get_db_session
             db = get_db_session()
@@ -318,7 +293,6 @@ async def process_analysis_job(job_id: str, github_username: str, skills: list):
                 "stage": "database_error_update"
             })
         
-        # Update Redis status
         await job_queue.update_job_status(job_id, "failed", error=str(e))
         log_job_progress(job_id, "error", "Job marked as failed in Redis")
 
@@ -328,33 +302,27 @@ async def start_background_processor():
     Start the background job processor
     This runs continuously to process jobs from the queue
     """
-    print("🚀 Starting background job processor...")
     
     while True:
         try:
-            # Check for jobs in queue
             job_id = await redis_manager.get("queue:processing")
             
             if job_id:
-                # Get job data
                 job_data_str = await redis_manager.get(f"job:{job_id}")
                 if job_data_str:
                     job_data = json.loads(job_data_str)
                     
-                    # Process the job
                     await process_analysis_job(
                         job_id=job_id,
                         github_username=job_data.get("github_username", ""),
                         skills=job_data.get("skills", [])
                     )
                     
-                    # Remove from queue
                     await redis_manager.delete("queue:processing")
                     await redis_manager.delete(f"job:{job_id}")
             
-            # Wait before checking again
             await asyncio.sleep(1)
             
         except Exception as e:
             print(f"Error in background processor: {e}")
-            await asyncio.sleep(5)  # Wait longer on error
+            await asyncio.sleep(5)

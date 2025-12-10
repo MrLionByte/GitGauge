@@ -1,8 +1,11 @@
-from fastapi import FastAPI, Request
+import httpx
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from typing import Optional
 from app.config import settings
 from app.api.routers import jobs
 from contextlib import asynccontextmanager
@@ -15,6 +18,10 @@ import asyncio, time, uuid
 logger = setup_logging(
     level="INFO" if not settings.DEBUG else "DEBUG",
 )
+
+class Feedback(BaseModel):
+    name: Optional[str] = None
+    feedback: str
 
 # Create database tables on startup
 @asynccontextmanager
@@ -115,6 +122,44 @@ async def home(request: Request):
     return templates.TemplateResponse("test_api.html", {"request": request})
 
 
+@app.post("/api/submit-feedback")
+async def submit_feedback_to_discord(feedback_data: Feedback):
+    """Forwards feedback to discord"""
+    logger.info(f"Received feedback from: {feedback_data.name or 'Anonymous'}")
+    DISCORD_WEBHOOK_URL = settings.DISCORD_WEBHOOK_URL
+    payload = {
+        "content": "📢 **New GitGauge Feedback!**",
+        "embeds": [{
+            "title": "User Feedback Submission",
+            "color": 3447003, # Blue color
+            "fields": [
+                {"name": "Name", "value": feedback_data.name or "*Anonymous*", "inline": True},
+                {"name": "Message", "value": feedback_data.feedback, "inline": False}
+            ],
+            "timestamp": "2025-12-10T14:00:00.000Z" # Discord automatically accepts ISO format
+        }]
+    }
+    try:
+        # Use httpx to make an asynchronous POST request to the Discord Webhook URL
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                DISCORD_WEBHOOK_URL,
+                json=payload
+            )
+            response.raise_for_status() # Raises an exception for 4xx/5xx responses
+
+        logger.info("Feedback successfully sent to Discord.")
+        return {"message": "Feedback submitted successfully."}
+
+    except httpx.HTTPStatusError as e:
+        logger.error(f"Discord API error: {e.response.status_code} - {e.response.text}")
+        # Return a 500 error to the client if Discord API fails
+        raise HTTPException(status_code=500, detail="Could not relay feedback to destination.")
+    except Exception as e:
+        logger.error(f"An unexpected error occurred: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error during processing.")
+
+
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""
@@ -126,6 +171,7 @@ async def health_check():
         "debug": settings.DEBUG,
         "timestamp": time.time()
     }
+
 
 if __name__ == "__main__":
     import uvicorn
