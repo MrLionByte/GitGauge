@@ -34,6 +34,8 @@ class Settings(BaseSettings):
     # Logger Setup
     LOGTAIL_TOKEN: str
     
+    DISCORD_WEBHOOK_URL:str
+    
     class Config:
         env_file = ".env"
         case_sensitive = False

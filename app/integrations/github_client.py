@@ -20,7 +20,6 @@ class GitHubClient:
         
         # Add authentication if token is provided and valid
         if settings.GITHUB_TOKEN:
-            print("Github Auth token is =>", settings.GITHUB_TOKEN)
             self.headers["Authorization"] = f"token {settings.GITHUB_TOKEN}"
         
         self.timeout = httpx.Timeout(settings.GITHUB_TIMEOUT)

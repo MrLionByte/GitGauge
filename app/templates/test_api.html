@@ -15,8 +15,8 @@
             <h2>Create New Analysis Job</h2>
             <p><strong>Note:</strong> If you are testing locally, replace the actual url with local url.</p>
             <form id="create-job-form">
-                <label for="backendUrl">Backend URL</label>
-                <input type="text" id="backendUrl" value="https://gitgauge.onrender.com" required>
+                <p>Fields marked with * are required.</p>
+                <input type="text" hidden id="backendUrl" value="https://gitgauge.onrender.com" required>
                 
                 <label for="githubUsername">GitHub Username*</label>
                 <input type="text" id="githubUsername" value="octocat" placeholder="e.g., octocat" required>
@@ -53,6 +53,10 @@
                 <div id="raw-api-output-code" class="code-block">Waiting for data...</div>
             </section>
         </section>
+
+            <div class="footer-content">
+                <script type="text/javascript" src="https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js" data-name="bmc-button" data-slug="mrlionbyte" data-color="#FFDD00" data-emoji=""  data-font="Comic" data-text="Buy me a coffee" data-outline-color="#000000" data-font-color="#000000" data-coffee-color="#ffffff" ></script>
+            </div>
 
     </div>
 
@@ -278,9 +282,6 @@
         });
 
 
-        /**
-         * Step 2: Polls the API for job status (GET /api/jobs/{job_id}).
-         */
         async function checkJobStatus(backendUrl, id) {
             try {
                 const response = await fetch(`${backendUrl}/api/jobs/${id}`);
@@ -329,5 +330,7 @@
 
         clearStatus(true, true);
     </script>
+
+
 </body>
 </html>

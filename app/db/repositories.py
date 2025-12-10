@@ -13,7 +13,6 @@ class JobRepository:
     
     def create_job(self, job_request: CreateJobRequest) -> Job:
         """Create a new job"""
-        print('job_request ==> ', job_request)
         job = Job(
             github_username=job_request.github_username,
             skills=job_request.skills,
